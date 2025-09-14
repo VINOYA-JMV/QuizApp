@@ -4,53 +4,35 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.nio.Buffer;
-import java.util.Arrays;
-import java.util.List;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 @Service
 public class YoutubeTranscriptService {
-    public String fetchTranscript(String youtubeUrl) throws Exception{
-        if(youtubeUrl==null || youtubeUrl.trim().isEmpty()) return "";
 
-        String videoId = extractVideoId(youtubeUrl.trim());
-        if(videoId.isEmpty()) return "";
-
-        List<String> cmd = Arrays.asList(
-            "python", "-c",
-            "from youtube_transcript_api import YoutubeTranscriptApi;"+
-            "print('\\n'.join([t['text'] for t in YoutubeTranscriptApi.get_transcript(\""+ videoId + "\")]))"
-        );
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-
-        StringBuilder out = new StringBuilder();
-        try(BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))){
-            String line;
-            while((line = r.readLine()) != null){
-                out.append(line).append("\n");
+    public String getTranscript(String videoUrl) {
+        try {
+            // Extract video ID from YouTube URL
+            String videoId = extractVideoId(videoUrl);
+            if (videoId == null) {
+                return "Invalid YouTube URL.";
             }
+
+            // For now, simulate transcript (since we don’t yet use YouTube API)
+            // Later we’ll integrate official API
+            return "Transcript for video ID: " + videoId + " (simulated response)";
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "Error fetching transcript: " + e.getMessage();
         }
-        int exit = p.waitFor();
-        if(exit != 0 || out.length()==0){
-            return "";
-        }
-        return out.toString();
     }
 
-    private String extractVideoId(String url){
-        if(url.contains("v=")){
-            String after = url.substring(url.indexOf("v=")+2);
-            int amp = after.indexOf('&');
-            return amp==-1 ? after : after.substring(0, amp);
+    private String extractVideoId(String videoUrl) {
+        if (videoUrl.contains("v=")) {
+            return videoUrl.substring(videoUrl.indexOf("v=") + 2, videoUrl.indexOf("v=") + 13);
+        } else if (videoUrl.contains("youtu.be/")) {
+            return videoUrl.substring(videoUrl.indexOf("youtu.be/") + 9, videoUrl.indexOf("youtu.be/") + 20);
         }
-        else if(url.contains("youtu.be/")){
-            return url.substring(url.lastIndexOf('/')+1);
-        }
-        else{
-            return url;
-        }
+        return null;
     }
 }
