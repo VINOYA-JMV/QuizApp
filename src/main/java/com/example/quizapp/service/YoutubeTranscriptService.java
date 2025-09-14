@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class YoutubeTranscriptService {
@@ -34,5 +36,13 @@ public class YoutubeTranscriptService {
             return videoUrl.substring(videoUrl.indexOf("youtu.be/") + 9, videoUrl.indexOf("youtu.be/") + 20);
         }
         return null;
+    }
+    public List<String> fetchTranscript(String videoUrl) {
+        // TODO: Replace with real YouTube transcript fetching logic
+        List<String> transcript = new ArrayList<>();
+        transcript.add("This is a placeholder transcript line 1.");
+        transcript.add("This is a placeholder transcript line 2.");
+        transcript.add("This is a placeholder transcript line 3.");
+        return transcript;
     }
 }
