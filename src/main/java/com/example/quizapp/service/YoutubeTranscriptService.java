@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -23,36 +22,25 @@ public class YoutubeTranscriptService {
             return transcript;
         }
 
-        List<String> cmd = Arrays.asList(
-            "python", "-c",
-            "from youtube_transcript_api import YouTubeTranscriptApi;" +
-            "print('\\n'.join([t['text'] for t in YouTubeTranscriptApi.get_transcript('" + videoId + "')]))"
-        );
+        // Full path to transcript.py (recommended for Windows users)
+        String scriptPath = "transcript.py"; // put transcript.py in project root
 
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        Process p = pb.start();
+        ProcessBuilder pb = new ProcessBuilder("python", scriptPath, videoId);
+        pb.redirectErrorStream(true);
 
-        // ✅ capture stdout
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+        Process process = pb.start();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
             String line;
-            while ((line = r.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 transcript.add(line);
             }
         }
 
-        // ✅ capture stderr (errors from Python)
-        List<String> errors = new ArrayList<>();
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                errors.add(line);
-            }
-        }
-
-        int exit = p.waitFor();
-        if (exit != 0 || transcript.isEmpty()) {
-            System.err.println("Python error while fetching transcript: " + String.join("\n", errors));
-            return new ArrayList<>(); // return empty list on failure
+        int exitCode = process.waitFor();
+        if (exitCode != 0 || transcript.isEmpty()) {
+            System.err.println("Python script failed or returned no transcript");
+            return new ArrayList<>();
         }
 
         return transcript;
