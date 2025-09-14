@@ -3,7 +3,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("ERROR: Missing video ID")
+        print("No video ID provided", file=sys.stderr)
         sys.exit(1)
 
     video_id = sys.argv[1]
@@ -12,5 +12,5 @@ if __name__ == "__main__":
         for entry in transcript:
             print(entry['text'])
     except Exception as e:
-        print(f"ERROR: {str(e)}")
+        print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
