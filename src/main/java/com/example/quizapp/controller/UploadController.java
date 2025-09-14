@@ -5,19 +5,12 @@ import com.example.quizapp.service.TextExtractionService;
 import com.example.quizapp.service.YoutubeTranscriptService;
 import com.example.quizapp.service.QuizGeneratorService;
 
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-
 
 @Controller
 public class UploadController {
@@ -37,38 +30,51 @@ public class UploadController {
     }
 
     @PostMapping("/process")
-    public String process(@RequestParam(value = "file", required = false) MultipartFile file, @RequestParam(value = "youtubeUrl", required = false) String youtubeUrl, Model model){
-        try{
+    public String process(@RequestParam(value = "file", required = false) MultipartFile file,
+                          @RequestParam(value = "youtubeUrl", required = false) String youtubeUrl,
+                          Model model) {
+        try {
+            List<String> transcriptLines = null;
             String text = "";
-            if(file != null && !file.isEmpty()){
+
+            // 1️⃣ Process file upload
+            if (file != null && !file.isEmpty()) {
                 text = textService.extractText(file);
             }
-            else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty()){
-                List<String> transcriptLines = ytService.fetchTranscript(youtubeUrl.trim());
-                if(transcriptLines.isEmpty()){
+            // 2️⃣ Process YouTube URL
+            else if (youtubeUrl != null && !youtubeUrl.trim().isEmpty()) {
+                transcriptLines = ytService.fetchTranscript(youtubeUrl.trim());
+                if (transcriptLines.isEmpty()) {
                     model.addAttribute("error", "Could not fetch transcript from the YouTube URL.");
                     return "upload";
                 }
-                text=String.join("", transcriptLines);
+                // Combine transcript lines for quiz generation
+                text = String.join(" ", transcriptLines);
             }
-            else{
+            // 3️⃣ No input
+            else {
                 model.addAttribute("error", "Please upload a file or paste a YouTube link.");
                 return "upload";
             }
 
+            // Generate quiz questions
             List<Question> questions = quizService.generate(text, 10);
-            if (questions.isEmpty()){
+            if (questions.isEmpty()) {
                 model.addAttribute("error", "No suitable content found to create questions.");
                 return "upload";
             }
 
             model.addAttribute("questions", questions);
+
+            // Pass transcript to template if YouTube was used
+            if (transcriptLines != null) {
+                model.addAttribute("transcript", transcriptLines);
+            }
+
             return "quiz";
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             model.addAttribute("error", "Processing error: " + e.getMessage());
             return "upload";
         }
     }
-    
 }
