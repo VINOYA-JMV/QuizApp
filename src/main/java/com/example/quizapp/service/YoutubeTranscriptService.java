@@ -5,17 +5,19 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class YoutubeTranscriptService {
 
-    public String fetchTranscript(String videoUrl) {
+    public List<String> fetchTranscript(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
         if (videoId == null) {
-            return "Invalid YouTube URL";
+            return List.of("Invalid YouTube URL");
         }
 
-        StringBuilder transcript = new StringBuilder();
+        List<String> transcript = new ArrayList<>();
         try {
             ProcessBuilder pb = new ProcessBuilder("python", "transcript.py", videoId);
             pb.redirectErrorStream(true);
@@ -25,20 +27,20 @@ public class YoutubeTranscriptService {
                     new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    transcript.append(line).append("\n");
+                    transcript.add(line);
                 }
             }
 
             int exitCode = process.waitFor();
             if (exitCode != 0) {
-                return "Failed to fetch transcript. Exit code: " + exitCode;
+                return List.of("Failed to fetch transcript. Exit code: " + exitCode);
             }
 
         } catch (IOException | InterruptedException e) {
-            return "Error: " + e.getMessage();
+            return List.of("Error: " + e.getMessage());
         }
 
-        return transcript.toString();
+        return transcript;
     }
 
     private String extractVideoId(String url) {
