@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -22,24 +23,30 @@ public class YoutubeTranscriptService {
             return transcript;
         }
 
-        // Full path to transcript.py (recommended for Windows users)
-        String scriptPath = "transcript.py"; // put transcript.py in project root
+        // Run the Python script with the video ID
+        List<String> cmd = Arrays.asList("python", "transcript.py", videoId);
 
-        ProcessBuilder pb = new ProcessBuilder("python", scriptPath, videoId);
-        pb.redirectErrorStream(true);
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true); // combine stdout and stderr
+        Process p = pb.start();
 
-        Process process = pb.start();
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
-            while ((line = reader.readLine()) != null) {
+            while ((line = r.readLine()) != null) {
                 transcript.add(line);
             }
         }
 
-        int exitCode = process.waitFor();
-        if (exitCode != 0 || transcript.isEmpty()) {
-            System.err.println("Python script failed or returned no transcript");
+        int exit = p.waitFor();
+        if (exit != 0 || transcript.isEmpty()) {
+            System.err.println("Transcript fetch failed for video: " + videoId);
+            if (transcript.isEmpty()) {
+                System.err.println("Python script returned no output.");
+            } else {
+                for (String line : transcript) {
+                    System.err.println("Python said: " + line);
+                }
+            }
             return new ArrayList<>();
         }
 
@@ -48,13 +55,4 @@ public class YoutubeTranscriptService {
 
     private String extractVideoId(String url) {
         if (url.contains("v=")) {
-            String after = url.substring(url.indexOf("v=") + 2);
-            int amp = after.indexOf('&');
-            return amp == -1 ? after : after.substring(0, amp);
-        } else if (url.contains("youtu.be/")) {
-            return url.substring(url.lastIndexOf('/') + 1);
-        } else {
-            return url;
-        }
-    }
-}
+            String after = url.substring(url.indexOf("v="
