@@ -45,11 +45,11 @@ public class UploadController {
             }
             else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty()){
                 List<String> transcriptLines = ytService.fetchTranscript(youtubeUrl.trim());
-                text = String.join(" ", transcriptLines);
-                if(text == null || text.isBlank()){
+                if(transcriptLines.isEmpty()){
                     model.addAttribute("error", "Could not fetch transcript from the YouTube URL.");
                     return "upload";
                 }
+                text=String.join("", transcriptLines);
             }
             else{
                 model.addAttribute("error", "Please upload a file or paste a YouTube link.");
