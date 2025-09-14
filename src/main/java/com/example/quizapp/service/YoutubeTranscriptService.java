@@ -30,9 +30,9 @@ public class YoutubeTranscriptService {
         );
 
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
         Process p = pb.start();
 
+        // ✅ capture stdout
         try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
             String line;
             while ((line = r.readLine()) != null) {
@@ -40,8 +40,18 @@ public class YoutubeTranscriptService {
             }
         }
 
+        // ✅ capture stderr (errors from Python)
+        List<String> errors = new ArrayList<>();
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                errors.add(line);
+            }
+        }
+
         int exit = p.waitFor();
         if (exit != 0 || transcript.isEmpty()) {
+            System.err.println("Python error while fetching transcript: " + String.join("\n", errors));
             return new ArrayList<>(); // return empty list on failure
         }
 
