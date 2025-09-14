@@ -29,8 +29,6 @@ public class UploadController {
         this.textService = textService;
         this.ytService = ytService;
         this.quizService = quizService;
-
-        System.out.println("UploadController initialized!");
     }
 
     @GetMapping("/upload")
@@ -45,8 +43,9 @@ public class UploadController {
             if(file != null && !file.isEmpty()){
                 text = textService.extractText(file);
             }
-            else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty()){
-                text = ytService.fetchTranscript(youtubeUrl.trim());
+            else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty(){
+                List<String> transcriptLines = ytService.fetchTranscript(youtubeUrl.trim());
+                text = String.join(" ", transcriptLines);
                 if(text == null || text.isBlank()){
                     model.addAttribute("error", "Could not fetch transcript from the YouTube URL.");
                     return "upload";
