@@ -43,7 +43,7 @@ public class UploadController {
             if(file != null && !file.isEmpty()){
                 text = textService.extractText(file);
             }
-            else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty(){
+            else if(youtubeUrl != null && !youtubeUrl.trim().isEmpty()){
                 List<String> transcriptLines = ytService.fetchTranscript(youtubeUrl.trim());
                 text = String.join(" ", transcriptLines);
                 if(text == null || text.isBlank()){
