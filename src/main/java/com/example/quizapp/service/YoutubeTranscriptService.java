@@ -3,58 +3,53 @@ package com.example.quizapp.service;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 @Service
 public class YoutubeTranscriptService {
 
-    public List<String> fetchTranscript(String youtubeUrl) throws Exception {
-        List<String> transcript = new ArrayList<>();
-
-        if (youtubeUrl == null || youtubeUrl.trim().isEmpty()) {
-            return transcript;
+    public String getTranscript(String videoUrl) {
+        String videoId = extractVideoId(videoUrl);
+        if (videoId == null) {
+            return "Invalid YouTube URL";
         }
 
-        String videoId = extractVideoId(youtubeUrl.trim());
-        if (videoId.isEmpty()) {
-            return transcript;
-        }
+        StringBuilder transcript = new StringBuilder();
+        try {
+            ProcessBuilder pb = new ProcessBuilder("python", "transcript.py", videoId);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
 
-        // Run the Python script with the video ID
-        List<String> cmd = Arrays.asList("python", "transcript.py", videoId);
-
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true); // combine stdout and stderr
-        Process p = pb.start();
-
-        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                transcript.add(line);
-            }
-        }
-
-        int exit = p.waitFor();
-        if (exit != 0 || transcript.isEmpty()) {
-            System.err.println("Transcript fetch failed for video: " + videoId);
-            if (transcript.isEmpty()) {
-                System.err.println("Python script returned no output.");
-            } else {
-                for (String line : transcript) {
-                    System.err.println("Python said: " + line);
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    transcript.append(line).append("\n");
                 }
             }
-            return new ArrayList<>();
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                return "Failed to fetch transcript. Exit code: " + exitCode;
+            }
+
+        } catch (IOException | InterruptedException e) {
+            return "Error: " + e.getMessage();
         }
 
-        return transcript;
+        return transcript.toString();
     }
 
     private String extractVideoId(String url) {
         if (url.contains("v=")) {
-            String after = url.substring(url.indexOf("v="
+            String after = url.substring(url.indexOf("v=") + 2);
+            int amp = after.indexOf('&');
+            return amp == -1 ? after : after.substring(0, amp);
+        } else if (url.contains("youtu.be/")) {
+            return url.substring(url.lastIndexOf('/') + 1);
+        } else {
+            return url;
+        }
     }
 }
