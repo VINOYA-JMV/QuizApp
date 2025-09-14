@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Quiz</title>
+</head>
+<body>
+  <h1>Your Quiz</h1>
+
+  <form id="quizForm" onsubmit="return false;">
+    <div th:each="q, stat : ${questions}">
+      <p>
+        <b th:text="${stat.index + 1} + '. '"></b>
+        <span th:text="${q.prompt}"></span>
+      </p>
+      <input type="text" th:attr="data-answer=${q.answer}" style="width: 60%;" />
+      <hr/>
+    </div>
+
+    <p>
+      <button type="button" onclick="checkAnswers()">Check Answers</button>
+      <a href="/">Back</a>
+    </p>
+  </form>
+
+  <script>
+    function checkAnswers() {
+      const inputs = document.querySelectorAll('input[data-answer]');
+      let correct = 0;
+      inputs.forEach(input => {
+        const expected = (input.dataset.answer || '').trim().toLowerCase();
+        const given = (input.value || '').trim().toLowerCase();
+        if (expected && given === expected) {
+          input.style.backgroundColor = '#c8e6c9';
+          correct++;
+        } else {
+          input.style.backgroundColor = '#ffcdd2';
+        }
+      });
+      alert('Score: ' + correct + ' / ' + inputs.length);
+    }
+  </script>
+</body>
+</html>

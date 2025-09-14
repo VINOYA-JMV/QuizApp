@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Quiz</title>
+</head>
+<body>
+  <h1>Create Quiz</h1>
+
+  <div th:if="${error}" style="color: darkred; margin-bottom: 1em;">
+    <p th:text="${error}"></p>
+  </div>
+
+  <form method="post" action="/process" enctype="multipart/form-data">
+    <div>
+      <label>Upload a file (PDF / DOCX / TXT):</label><br/>
+      <input type="file" name="file" />
+    </div>
+
+    <div style="margin-top: 1em;">
+      <label>Or paste YouTube URL (transcript will be fetched):</label><br/>
+      <input type="text" name="youtubeUrl" placeholder="https://www.youtube.com/watch?v=..." style="width: 80%;" />
+    </div>
+
+    <div style="margin-top: 1em;">
+      <button type="submit">Create Quiz</button>
+    </div>
+  </form>
+</body>
+</html>
