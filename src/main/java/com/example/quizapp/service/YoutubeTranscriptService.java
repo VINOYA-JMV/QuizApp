@@ -4,45 +4,59 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class YoutubeTranscriptService {
 
-    public String getTranscript(String videoUrl) {
-        try {
-            // Extract video ID from YouTube URL
-            String videoId = extractVideoId(videoUrl);
-            if (videoId == null) {
-                return "Invalid YouTube URL.";
-            }
-
-            // For now, simulate transcript (since we don’t yet use YouTube API)
-            // Later we’ll integrate official API
-            return "Transcript for video ID: " + videoId + " (simulated response)";
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "Error fetching transcript: " + e.getMessage();
-        }
-    }
-
-    private String extractVideoId(String videoUrl) {
-        if (videoUrl.contains("v=")) {
-            return videoUrl.substring(videoUrl.indexOf("v=") + 2, videoUrl.indexOf("v=") + 13);
-        } else if (videoUrl.contains("youtu.be/")) {
-            return videoUrl.substring(videoUrl.indexOf("youtu.be/") + 9, videoUrl.indexOf("youtu.be/") + 20);
-        }
-        return null;
-    }
-    public List<String> fetchTranscript(String videoUrl) {
-        // TODO: Replace with real YouTube transcript fetching logic
+    public List<String> fetchTranscript(String youtubeUrl) throws Exception {
         List<String> transcript = new ArrayList<>();
-        transcript.add("This is a placeholder transcript line 1.");
-        transcript.add("This is a placeholder transcript line 2.");
-        transcript.add("This is a placeholder transcript line 3.");
+
+        if (youtubeUrl == null || youtubeUrl.trim().isEmpty()) {
+            return transcript;
+        }
+
+        String videoId = extractVideoId(youtubeUrl.trim());
+        if (videoId.isEmpty()) {
+            return transcript;
+        }
+
+        List<String> cmd = Arrays.asList(
+            "python", "-c",
+            "from youtube_transcript_api import YouTubeTranscriptApi;" +
+            "print('\\n'.join([t['text'] for t in YouTubeTranscriptApi.get_transcript('" + videoId + "')]))"
+        );
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
+        Process p = pb.start();
+
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+            String line;
+            while ((line = r.readLine()) != null) {
+                transcript.add(line);
+            }
+        }
+
+        int exit = p.waitFor();
+        if (exit != 0 || transcript.isEmpty()) {
+            return new ArrayList<>(); // return empty list on failure
+        }
+
         return transcript;
+    }
+
+    private String extractVideoId(String url) {
+        if (url.contains("v=")) {
+            String after = url.substring(url.indexOf("v=") + 2);
+            int amp = after.indexOf('&');
+            return amp == -1 ? after : after.substring(0, amp);
+        } else if (url.contains("youtu.be/")) {
+            return url.substring(url.lastIndexOf('/') + 1);
+        } else {
+            return url;
+        }
     }
 }
