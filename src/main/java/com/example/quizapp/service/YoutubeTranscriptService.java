@@ -9,7 +9,7 @@ import java.io.InputStreamReader;
 @Service
 public class YoutubeTranscriptService {
 
-    public String getTranscript(String videoUrl) {
+    public String fetchTranscript(String videoUrl) {
         String videoId = extractVideoId(videoUrl);
         if (videoId == null) {
             return "Invalid YouTube URL";
